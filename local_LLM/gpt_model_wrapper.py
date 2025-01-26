@@ -26,7 +26,7 @@ class GPTModelWrapper:
         api_model: str = "Qwen/Qwen2.5-7B-Instruct",  # OpenAI API model (e.g., GPT-4, gpt-3.5-turbo)
         model_directory: str = "./models",  # Directory for personalized models
         life_name: str = "LIFE1",  # Default life entity (LIFE1, LIFE2, etc.)
-        gptwrapper_name: str = "Minecraft-NPC-LLM",  # GPTWrapper for specific aspect
+        gptwrapper_name: str = "Local-LLM",  # GPTWrapper for specific aspect
         start_model: bool = True,  # Start the model on initialization
     ):
         self.protocol = Protocol()
