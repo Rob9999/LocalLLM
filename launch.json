@@ -1,0 +1,16 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python: Start EthosAI",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/scripts/start.py",
+			"console": "integratedTerminal",
+			"justMyCode": false, // Optional: If you want to debug code from external libraries as well
+			"env": {
+				"PYTHONPATH": "${workspaceFolder}" // Adds the project directory to PYTHONPATH
+			}
+		}
+	]
+}

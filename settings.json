@@ -1,0 +1,9 @@
+{
+	"python.pythonPath": "venv/bin/python",
+	"python.linting.enabled": true,
+	"python.linting.pylintEnabled": true,
+	"python.formatting.provider": "black",
+	"python.linting.pylintArgs": [
+		"--disable=C0111" // Disables error messages for missing docstrings
+	]
+}
