@@ -1,6 +1,6 @@
 # LocalLLM
 
-LocalLLM is a powerful framework for implementing and utilizing local Large Language Models (LLMs). It is designed to enable users to run and customize their AI models locally without relying on external cloud services. This project is aimed at both AI developers and businesses looking to keep their data secure and private.
+LocalLLM ist ein Framework zum lokalen Betrieb und zur Anpassung von Large Language Models (LLMs). Damit lassen sich Modelle ohne externe Cloud-Services einsetzen und weiterentwickeln – ideal für datenschutzsensitive Szenarien.
 
 ## Table of Contents
 
@@ -8,106 +8,125 @@ LocalLLM is a powerful framework for implementing and utilizing local Large Lang
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Examples](#examples)
+- [Training](#training)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
-- **Locally executed LLMs**: No need to send data to external servers.
-- **Easy integration**: Provides APIs and example scripts for quick implementation.
-- **Customizability**: Supports fine-tuning models for specific use cases.
-- **Multi-model support**: Compatible with multiple LLM architectures (e.g., GPT, LLaMA).
-- **Efficiency optimizations**: Leverages modern techniques to optimize computational resources.
+- **Lokale Ausführung**: Keine Datenübertragung an externe Server notwendig.  
+- **Einfache Integration**: Zugriff über Python-Klassen und (optional) über eine lokale REST-API.  
+- **Anpassbarkeit**: Feintuning auf individuelle Anforderungen.  
+- **Multi-Model-Unterstützung**: Kann mit verschiedenen Architekturen (z.B. GPT, LLaMA, Qwen) umgehen.  
+- **Optimierungen**: Moderne Techniken zur Reduzierung von Rechenaufwand.
 
 ## Requirements
 
-Ensure your system meets the following requirements:
+- **Python**: Version 3.9 oder höher (siehe `setup.py`)
+- **RAM**: Mindestens 16 GB (empfohlen 32 GB)
+- **GPU (optional)**: CUDA-fähig für beschleunigtes Inferencing
 
-- Python 3.8 or higher
-- At least 16 GB of RAM (32 GB recommended)
-- CUDA-compatible GPU (optional but recommended for faster inference)
-
-Additionally, the following Python libraries are required:
+Benötigte Python-Bibliotheken (u.a.):
 
 - `torch`
 - `transformers`
 - `numpy`
-- `flask` (if you want to use the API)
+- `fastapi`
+- `uvicorn`
+- `tqdm`
+- `openai` (nur falls API-Nutzung gewünscht)
+
+Zusätzlich wird in `scripts/start.py` per `docker-compose` ein Docker-Setup aufgerufen. Dafür sollte **Docker** installiert sein, wenn man den Server innerhalb eines Containers laufen lassen möchte.
 
 ## Installation
 
-1. Clone the repository:
-
+1. **Repository klonen**:
    ```bash
    git clone https://github.com/Rob9999/LocalLLM.git
    cd LocalLLM
    ```
 
-2. Install the dependencies:
-
+2. **Abhängigkeiten installieren** (Beispiel, falls eine `requirements.txt` vorhanden ist oder man selbst ein virtuelles Environment erstellt):
    ```bash
    pip install -r requirements.txt
    ```
+   *Alternativ* manuell:
+   ```bash
+   pip install torch transformers numpy fastapi uvicorn tqdm openai
+   ```
 
-3. (Optional) Set up your GPU environment to optimize performance.
+3. (Optional) **GPU konfigurieren**, wenn CUDA verwendet werden soll:
+   - Stellen Sie sicher, dass `torch` mit CUDA-Unterstützung installiert ist.
+   - Prüfen mit:
+     ```bash
+     python -c "import torch; print(torch.cuda.is_available())"
+     ```
 
 ## Usage
 
-### 1. Loading a Model
+### Lokalen Server starten
 
-Use the provided scripts to load a model:
-
-```python
-from localllm import ModelLoader
-
-# Example: Loading a GPT model
-model = ModelLoader.load_model("gpt-model-path")
-output = model.generate("Hello, how can I help you?")
-print(output)
-```
-
-### 2. Starting an API
-
-You can host a local API to make your models accessible:
+Zum Starten des lokalen LLM-Webservers gibt es ein Start-Skript:
 
 ```bash
-python api_server.py
+python scripts/start.py
 ```
 
-Access the API at `http://localhost:5000`.
+- Dieser Befehl ruft intern `docker-compose up -d` auf (sofern vorhanden) und startet anschließend eine FastAPI-Anwendung (Port 8000).  
+- **Ohne Docker** könnte man alternativ direkt das Skript `local_LLM/webserver/webserver.py` per `uvicorn` ausführen:
+  ```bash
+  uvicorn local_LLM.webserver.webserver:app --host 0.0.0.0 --port 8000
+  ```
+  
+Nach erfolgreichem Start ist der API-Endpunkt unter `http://localhost:8000` erreichbar.
 
-### 3. Fine-tuning a Model
+### Model laden und benutzen (Python)
 
-An example script for fine-tuning is included in the `scripts/finetuning` directory.
+Falls Sie lieber nur lokal in Python Code ausführen möchten (ohne Webserver):
 
-## Examples
+```python
+from local_LLM.gpt_model_wrapper import GPTModelWrapper
 
-Check out the example scripts in the `examples` folder to get started quickly. These include:
+# Initialisierung
+wrapper = GPTModelWrapper(
+    model_name="Qwen/Qwen2.5-7B-Instruct", 
+    use_api=False, 
+    start_model=True
+)
 
-- Text generation
-- Question-answering systems
-- Fine-tuning for domain-specific applications
+# Text generieren
+prompt = "Hello, how are you?"
+output_text = wrapper.generate_text(prompt)
+print(output_text)
+```
+
+## Training
+
+Der LLM-Webserver enthält Endpunkte zum Trainieren. Beispiel via REST-API:
+
+```bash
+curl -X POST "http://localhost:8000/train/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "training_data": ["Erster Trainingssatz", "Zweiter Trainingssatz"],
+    "epochs": 3,
+    "batch_size": 2,
+    "learning_rate": 5e-5
+  }'
+```
+
+- Über den Endpunkt `/training_status/` kann man den aktuellen Trainingsstatus abfragen.  
+- Das Training läuft asynchron; das Modell wird automatisch in der projektspezifischen Ordnerstruktur gespeichert.
+
+Für direktes Feintuning in Python (ohne API) bietet die Klasse `GPTModelWrapper` passende Methoden (`train()` oder `start_training_async()`).
 
 ## Contributing
 
-Contributions are welcome! If you find a bug or want to propose new features, please create an issue or submit a pull request.
-
-1. Fork the repository.
-2. Create a new branch:
-
-   ```bash
-   git checkout -b feature/new-feature
-   ```
-
-3. Commit your changes:
-
-   ```bash
-   git commit -m "Feature: Describe your new feature"
-   ```
-
-4. Submit a pull request.
+Beiträge sind willkommen!  
+- **Bug melden**: Bitte ein Issue auf GitHub erstellen.  
+- **Neue Features**: Pull Request mit kurzer Beschreibung.  
+- **Entwicklungsumgebung**: Falls eigene Ideen, gern einen Fork erstellen und dort arbeiten.
 
 ## License
 
-This project is licensed under the Mozilla Public License 2.0 (MPL-2.0). See [LICENSE](LICENSE) for more details.
+Dieses Projekt steht unter der Mozilla Public License 2.0 (MPL-2.0). Siehe [LICENSE](LICENSE) für Details.
